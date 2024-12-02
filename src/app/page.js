@@ -179,7 +179,7 @@ export default function Home() {
 
       <div className="relative max-w-7xl h-screen mx-auto p-6 space-y-6">
         {/* Simple Navigation */}
-        <Nav newProject={newProject}/>
+        <Nav newProject={newProject} HistoryLink={true}/>
         <div
           className={`mt-10 h-[80%] flex flex-col items-center justify-center mx-5 my-10 transition duration-[2000ms] ${
             isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"

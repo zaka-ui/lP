@@ -27,51 +27,53 @@ const determineLevel = (totalKeywords) => {
   return { name: "VIP", color: "text-amber-400" };
 };
 
-const saveResultsToLocalStorage = (project) => {
+const saveResultsToDataBase = async(user ,project , results) => { 
   try {
     // Convert results to CSV format
-    const csvContent = convertToCSV(project.name, project.mainLocation, project.results);
-    // Create a new entry for local storage
-    const newResult = {
-      name: project.name,
-      mainLocation: project.mainLocation,
-      results: project.results,
-      csv: csvContent,
-      id: `history-${Date.now()}`,
-      timestamp: new Date().toISOString(),
-    };
-    // Retrieve existing results from local storage
-    const existingResults = JSON.parse(localStorage.getItem("keywordResults")) || [];
-    // Update the results and save back to local storage
-    const updatedResults = [...existingResults, newResult];
-    localStorage.setItem("keywordResults", JSON.stringify(updatedResults));
-    return true;
+     const response = await fetch(`${process.env.NEXT_PUBLIC_API_BACKEND_BASE_URL}/projects/${project.data.id}/results`, {
+       method: "POST",
+       headers: {
+         "Content-Type": "application/json",
+         "Accept" : "application/json",
+         "Authorization" : `Bearer ${user.token}`
+       },
+       body: JSON.stringify({
+         results : results
+       })
+     })
+    
+    if(!response.status === 200){
+      showErrorMessage("Error saving results. Please try again.");
+      setShowError(true);
+      return false;
+    }else{
+      const data = await saveResult.json();
+      showPopup("Results saved successfully!");
+      return true;
+    }
+    
   } catch (error) {
     console.log("Error saving results: " + error.message);
     return false;
   }
 };
 
-const convertToCSV = (businessName, mainLocation, results) => {
+const convertToCSV = (businessName, results) => {
   // Add business info as header rows
   const businessInfo = [
     `Business Name,${businessName || 'N/A'}`,
-    `Main Location,${mainLocation || 'N/A'}`,
-    '' // Empty line to separate business info from data
   ];
   // Original headers plus business info
-  const headers = ['Keyword', 'Monthly Searches', 'Competition', 'Related Keywords'];
+  const headers = ['Keyword', 'Search Volume', 'Keyword Difficulty', 'Related Keywords'];
   const rows = results?.map(result => {
   const keyword = result?.keyword || 'Unknown Keyword';
     // Ensure data.result exists and has at least one item
-    const data =  result?.result[0] ||  result?.result || {};
-    //const mainData = Array.isArray(data.result) && data.result.length > 0 ? data.result[0] : {};
-    // Retrieve competition value and monthly searches with checks
-    const competitionValue = data?.competition_value || data?.result[0].competition_value || '-';
-    const avgMonthlySearches = data?.avg_monthly_searches || data?.result[0].avg_monthly_searches ||'-';
+
+    const competitionValue = result?.keyword_difficulty|| '-';
+    const avgMonthlySearches = result?.search_volume || '-' ;
     // Handle suggestions, skipping the first item which is the main result
-    const suggestions = Array.isArray(data.result) && data.result.length > 1 
-      ? data.result
+    const suggestions = Array.isArray(result.suggestions) && result.suggestions.length > 1 
+      ? result.suggestions
           .slice(1)
           .map(sugg => sugg.keyword || 'N/A')
           .join('\n')
@@ -137,7 +139,7 @@ const Header = ({ onBack , goHistory}) => (
   </div>
 );
 
-const BusinessInfo = ({ name, location }) => (
+const BusinessInfo = ({ name }) => (
   <div className="bg-gray-800/50 p-6 rounded-lg backdrop-blur-sm border border-gray-700 
                 shadow-lg space-y-4">
     <h2 className="text-xl font-semibold text-transparent bg-clip-text 
@@ -152,19 +154,28 @@ const BusinessInfo = ({ name, location }) => (
           {name || 'N/A'}
         </p>
       </div>
+      {/*
       <div className="flex items-center space-x-3 text-gray-300">
         <MapPin className="h-5 w-5 text-purple-400" />
         <p>
           <span className="text-gray-400">Main Location:</span>{' '}
           {location || 'N/A'}
         </p>
+      </div><div className="flex items-center space-x-3 text-gray-300">
+        <MapPin className="h-5 w-5 text-purple-400" />
+        <p>
+          <span className="text-gray-400">Main Location:</span>{' '}
+          {location || 'N/A'}
+        </p>
       </div>
+      */}
     </div>
   </div>
 );
 
-const ActionButtons = ({ analyzeKeywords, onDownload, onSave, disabled }) => (
+const ActionButtons = ({ analyzeKeywords, onDownload, onSave, disabled , save }) => (
   <div className="flex flex-wrap gap-3">
+   {/* 
     <button
       onClick={analyzeKeywords}
       disabled={disabled}
@@ -178,6 +189,9 @@ const ActionButtons = ({ analyzeKeywords, onDownload, onSave, disabled }) => (
       {disabled ? <Loader2 className="w-5 h-5 animate-spin" /> : <Wand2 className="w-5 h-5" />}
      ai Suggestions
     </button>
+   */}
+
+
     <button
       onClick={onDownload}
       disabled={disabled}
@@ -190,7 +204,7 @@ const ActionButtons = ({ analyzeKeywords, onDownload, onSave, disabled }) => (
     >
       <Download className="w-5 h-5" /> Download CSV
     </button>
-    <button
+   {save ?  <button
       onClick={onSave}
       disabled={disabled}
       className="flex items-center gap-2 px-4 py-2 rounded-lg
@@ -201,7 +215,7 @@ const ActionButtons = ({ analyzeKeywords, onDownload, onSave, disabled }) => (
                 disabled:hover:scale-100 shadow-lg"
     >
       <Save className="w-5 h-5" /> Save Results
-    </button>
+    </button> : ""}
   </div>
 );
 
@@ -211,7 +225,9 @@ const ActionButtons = ({ analyzeKeywords, onDownload, onSave, disabled }) => (
 // Main component
 export default function Results() {
   const [loader , setLoader] = useState(false)
-  const { project,setProject, results, name, mainLocation,setAiResponse } = useContext(ResultsContext);
+  const { user,setProject, project , setResults, results, name,setAiResponse } = useContext(ResultsContext); 
+  const [save , setSave] = useState(false);
+  
   const [showModal, setShowModal] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [showErrorMessage, setShowErrorMessage] = useState(false);
@@ -221,7 +237,9 @@ export default function Results() {
   const router = useRouter();
   const totalKeywords = calculateTotalKeywords(results);
   const level = determineLevel(totalKeywords);
-  useEffect(() => {
+
+
+useEffect(() => {
     const handleMouseMove = (e) => {
       const x = (e.clientX / window.innerWidth) * 100;
       const y = (e.clientY / window.innerHeight) * 100;
@@ -245,7 +263,7 @@ const handleDownloadCSV = () => {
 
       const date = new Date().toISOString().split('T')[0];
       const filename = `keyword-research-${date}.csv`;
-      const csvContent = convertToCSV(name, mainLocation ,results);
+      const csvContent = convertToCSV(name,results);
       
       downloadCSV(csvContent, filename);
     } catch (error) {
@@ -254,20 +272,20 @@ const handleDownloadCSV = () => {
     }
   };
 
-  const handleSave = () => {
-    const saved = saveResultsToLocalStorage(project);
-    if (saved) {
+const handleSave = () => {
+    const saved = saveResultsToDataBase(user , project ,results);
+    if(!saved) {
       //<KeywordLengthModal isOpen={} onClose={} message={}   />
-      showPopup('Results saved successfully!')
+      showPopup('Error saving results. Please try again.')
       setShowModal(true)
     } else {
-      showPopup("Error saving results. Please try again.");
+      setSave(true);
+      showPopup("result saved successfully!");
     }
   };
 
  
-  
- const analyzeKeywords = async (results) => {
+const analyzeKeywords = async (results) => {
   try {
     setLoader(true)
     const response = await fetch("/api", {
@@ -293,7 +311,7 @@ const handleError = (message) => {
     alert(message); // Replace with your preferred user feedback method (e.g., setShowError)
 };
   
-if (loader) {
+if (project?.data?.id) {
   return <Loading isOpen={loader}/>
 }else{
   return(
@@ -323,11 +341,18 @@ if (loader) {
             }}
           />
 
+
+
     <div className="relative max-w-7xl mx-auto p-6 space-y-6">
-      <Header onBack={() => router.back()}  goHistory={()=> router.push('http://localhost:3000/history')} />
+      <Header onBack={() => {
+        setProject({});
+        setResults([]);
+        setSave(false);
+        router.back()
+      }}  goHistory={()=> router.push('http://localhost:3000/history')} />
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <BusinessInfo name={project.name} location={project.mainLocation} />
+        <BusinessInfo name={project?.data?.name} />
 
         {results?.length > 0 && (
           <div className="flex justify-end items-center bg-gray-800/50 p-6 rounded-lg 
@@ -337,6 +362,7 @@ if (loader) {
               onDownload={handleDownloadCSV}
               onSave={handleSave}
               disabled={isLoading}
+              save={save}
             />
           </div>
         )}

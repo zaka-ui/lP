@@ -7,7 +7,6 @@ import PopUpError from "../components/PopUpError";
 import Nav from "../components/Nav";
 
 export default function CreateProject() {
-  const newProject = false;
   const { user,project ,setProject } = useContext(ResultsContext);
   const [errorMessage, setErrorMessage] = useState("");
   const [showError, setShowError] = useState(false);
@@ -15,6 +14,40 @@ export default function CreateProject() {
   const [gradientPosition, setGradientPosition] = useState({ x: 0, y: 0 });
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const containerRef = useRef(null);
+  const isUserVerified = user?.userData?.isVerified;
+  const isAdmin = user?.userData?.Role?.name === 'admin';
+
+const createProject = async () => {
+      try{
+         const response = await fetch(`${process.env.NEXT_PUBLIC_API_BACKEND_BASE_URL}/projects`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept" : "application/json",
+            "Authorization" : `Bearer ${user.token}`
+          },
+          body: JSON.stringify({
+            name: project.name,
+            description: project.description,
+          })
+         });
+         if(response.ok){
+           const data = await response.json();
+           console.log(data);
+           setProject({data})
+           router.push('/project/starter');
+           return ;
+         }else{
+           setErrorMessage("Invalid project name or description");
+           setShowError(true);
+           return ;
+         }
+      }catch(error){
+        setErrorMessage("Invalid project name or description");
+           setShowError(true);
+           return ;
+      }   
+    }
 
   useEffect(() => {
     const handleMouseMove = (e) => {
@@ -32,23 +65,36 @@ export default function CreateProject() {
     };
 
     window.addEventListener('mousemove', handleMouseMove);
+    //isVerified();
     return () => window.removeEventListener('mousemove', handleMouseMove);
+   
   }, []);
 
-  const handleSubmit = (e) => {
+const handleSubmit = (e) => {
     e.preventDefault();
-    if(project.name.trim().length === 0 || project.dueDate.trim().length === 0){
+    if(project.name.trim().length === 0){
      setErrorMessage("Please enter the name and due date for your project.");
      setShowError(true);
      return;
     }
-    router.push('/project/starter');
+    else if(!isUserVerified && !isAdmin){
+     setErrorMessage("Please verify your email address before creating a project.");
+     setShowError(true);
+     return;
+    }
+    else{
+      createProject();  
+      router.push(`${process.env.NEXT_PUBLIC_BASE_URL}/project/starter`);
+    }
+
   };
 
+  
 if(!user?.userData?.email){
   router.push("http://localhost:3000/login");  
- }else{
-     return (
+ }
+else {
+  return (
   <div className="min-h-screen bg-gray-900 text-white relative overflow-hidden" ref={containerRef}>
     {/* Animated background gradient */}
     <div
@@ -96,41 +142,20 @@ if(!user?.userData?.email){
         />
       ))}
     </div>
+
     <div className="max-w-7xl mx-auto p-6 space-y-6">
-    <Nav newProject={newProject}/>
+    <Nav newProject={false} HistoryLink={true} />
     </div>
-    <div className="relative flex flex-col min-h-screen items-center justify-start mt-10 p-6">
-      {/* Back button
-        <button 
-        onClick={() => {router.push(`${process.env.NEXT_PUBLIC_BASE_URL}`)}}
-        className="absolute top-6 left-6 flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-      >
-        <ArrowLeft className="w-5 h-5" />
-        Back to Home
-      </button>
-
-      <button 
-        onClick={() => {router.push(`${process.env.NEXT_PUBLIC_BASE_URL}/history`)}}
-        className="absolute top-6 right-6 flex items-center gap-2 text-gray-400 hover:text-white transition-colors"
-      >
-        <HistoryIcon className="w-5 h-5" />
-        history
-      </button>
-      */}
-
-    
-
+    <div className="relative flex flex-col mt-10 items-center justify-center mt-10 p-6">
       {/* Project creation form container */}
       <div className="w-full max-w-2xl relative">
         <div className="absolute -top-8 -left-8">
           <Sparkles className="text-blue-500 animate-pulse" />
         </div>
-        
         <div className="backdrop-blur-xl bg-white/5 p-8 rounded-2xl border border-white/10 shadow-2xl">
           <h2 className="text-3xl font-bold mb-6 bg-gradient-to-r from-blue-500 to-purple-500 text-transparent bg-clip-text">
             Create New Project
           </h2>
-
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Project name input */}
             <div className="relative group">
@@ -143,7 +168,6 @@ if(!user?.userData?.email){
                 className="w-full bg-gray-800/50 border border-gray-700 text-white px-11 py-5 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
               />
             </div>
-
             {/* Project description */}
             <div className="relative group">
               <FileText className="absolute left-3 top-3 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
@@ -154,18 +178,6 @@ if(!user?.userData?.email){
                 className="srollbar resize-y  rounded-md	 w-full bg-gray-800/50 border border-gray-700 text-white px-11 py-3 rounded-lg focus:outline-none focus:border-blue-500 transition-colors min-h-[100px]"
               />
             </div>
-
-            {/* Due date */}
-            <div className="relative group">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
-              <input
-                type="date"
-                value={project.dueDate}
-                onChange={(e) => setProject({ ...project, dueDate: e.target.value })}
-                className="w-full bg-gray-800/50 border border-gray-700 text-white px-11 py-5 rounded-lg focus:outline-none focus:border-blue-500 transition-colors"
-              />
-            </div>
-
             {/* Submit button */}
             <button
               type="submit"
@@ -190,8 +202,5 @@ if(!user?.userData?.email){
     <PopUpError isOpen={showError} onClose={() => setShowError(false)} message={errorMessage} />
   </div>
 );
- }
-
-
-
+}
 }

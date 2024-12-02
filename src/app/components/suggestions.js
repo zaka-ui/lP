@@ -15,10 +15,10 @@ const SuggestionsList = ({ suggestions }) => {
   }
 
   // Format the data to include only necessary information
-  const formattedSuggestions = suggestions.map(item => ({
+  const formattedSuggestions = suggestions?.map(item => ({
     keyword: item.keyword,
-    searches: item.avg_monthly_searches,
-    competition: item.competition_value
+    searches: item.search_volume,
+    competition: item.keyword_difficulty,
   }));
 
   const visibleSuggestions = isExpanded
@@ -33,10 +33,13 @@ const SuggestionsList = ({ suggestions }) => {
             key={`${suggestion.keyword}-${index}`}
             className="text-sm hover:bg-gray-50   rounded p-1"
           >
-            <div className="flex items-center justify-between">
-              <span className='hover:text-gray-500'>{suggestion.keyword}</span>
+            <div className="flex items-center justify-start space-x-2">
+              <span className='hover:text-gray-500'>{suggestion?.keyword}</span>
               <span className="text-xs text-gray-500">
-                ({suggestion.searches}/mo)
+                ({suggestion?.searches}/mo)
+              </span>
+              <span className="text-xs text-gray-500">
+                ({suggestion?.competition} KD)
               </span>
             </div>
           </li>

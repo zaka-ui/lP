@@ -1,10 +1,10 @@
-import { History, Plus, Menu, X } from "lucide-react"; 
+import { History, Plus, Menu, X , Mail, Users} from "lucide-react"; 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState, useRef, useEffect, useContext } from "react";
 const {ResultsContext} = require("../../context/result");
 
-function Nav({newProject}) {
+function Nav({newProject , HistoryLink}) {
   const { user, setUser } = useContext(ResultsContext);
    const router = useRouter();
    const interSectionMobile = useRef();   
@@ -12,19 +12,34 @@ function Nav({newProject}) {
    const [isVisibleMobiel, setIsVisibleMobiel] = useState(false);
    const [isVisibleDesktop, setIsVisibleDesktop] = useState(false);
    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
+   const logout = async () => {
+    try {
+       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BACKEND_BASE_URL}/logout` , {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Accept" : "application/json",
+      },
+      credentials: "include"
+       });
+       if(response.ok){
+         const data = await response.json();
+         console.log(data);
+         localStorage.removeItem("user");
+         router.push('/');
+       }
+    }catch(error){
+      console.log(error);
+    }
+   }
    useEffect(() => {       
      const mobielObserver = new IntersectionObserver((entries) => {       
-       const enteri = entries[0];    
-       console.log(enteri.isIntersecting);
-          
+       const enteri = entries[0];          
        setIsVisibleMobiel(enteri.isIntersecting);     
        //setIsVisibleDesktop(enteri.isIntersecting);     
      });  
      const desktopObserver = new IntersectionObserver((entries) => {       
-      const enteri = entries[0];    
-      console.log(enteri.isIntersecting);
-         
+      const enteri = entries[0];      
       setIsVisibleDesktop(enteri.isIntersecting);     
       //setIsVisibleDesktop(enteri.isIntersecting);     
     });       
@@ -49,17 +64,41 @@ function Nav({newProject}) {
          
          {user?.userData?.email ?
            <ul className="flex items-center justify-between gap-4">
-             <li 
-               className={`
-                 flex gap-2 cursor-pointer text-white font-medium py-2 
-                 ${newProject ? "" : "px-8"} 
-                 rounded-lg transition-all duration-500 transform hover:scale-[1.1]
-               `}
-               onClick={()=> router.push('/history')}
-             >
-               <History className="w-5 h-5" />History
-             </li>
-               <li 
+            
+            {
+                user?.userData?.Role?.name === 'admin' &&
+                 (
+                  <li 
+                  className={`
+                    flex gap-2 cursor-pointer text-white font-medium py-2 
+                    ${HistoryLink ? "" : "px-8"} 
+                    rounded-lg transition-all duration-500 transform hover:scale-[1.1]
+                  `}
+                  onClick={()=> router.push('/users')}
+                >
+                  <Users className="w-5 h-5" />utilisateurs
+                </li>
+                 )
+               
+              }
+              {
+                HistoryLink &&
+                 (
+                  <li 
+                  className={`
+                    flex gap-2 cursor-pointer text-white font-medium py-2 
+                    ${newProject ? "" : "px-8"} 
+                    rounded-lg transition-all duration-500 transform hover:scale-[1.1]
+                  `}
+                  onClick={()=> router.push('/history')}
+                >
+                  <History className="w-5 h-5" />History
+                </li>
+                 )
+               
+              }
+              { newProject && (
+                 <li 
                  className="
                    flex gap-2 cursor-pointer text-white font-medium py-2 px-4 
                    rounded-lg transition-all duration-500 transform hover:scale-[1.05]
@@ -69,6 +108,7 @@ function Nav({newProject}) {
                >
                  <Plus className="w-5 h-5" />New Project
                </li>
+              )}
              <li 
                className="
                  cursor-pointer border-solid border-2 border-indigo-500 
@@ -80,6 +120,7 @@ function Nav({newProject}) {
                onClick={() => {
                  setUser({});
                  localStorage.removeItem("user");
+                 logout();
                }}
              >
                Logout
@@ -165,6 +206,7 @@ function Nav({newProject}) {
                    onClick={() => {
                      setUser({});
                      localStorage.removeItem("user");
+                     logout();
                      setIsMobileMenuOpen(false);
                    }}
                  >

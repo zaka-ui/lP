@@ -15,9 +15,12 @@ export const ResultsProvider = ({ children }) => {
     token : "",
     userData : {
       email : "",
-      name : ""
+      name : "",
+      role : "",
+      isVerified : true
     }
   });
+
   const [project, setProject] = useState({
     name: "",
     description: "",
@@ -25,6 +28,7 @@ export const ResultsProvider = ({ children }) => {
     mainLocation: "",
     results: []
   });
+  
     // Safely retrieve from localStorage after the component mounts
   useEffect(() => {
     const savedUser = localStorage.getItem("user");

@@ -48,8 +48,7 @@ export default function PasswordReset() {
          },
          body: JSON.stringify({
            email: formState.email,
-         }),
-         credentials: "include",
+         })
        })
        if(response.ok){
          const data = await response.json();
@@ -70,22 +69,25 @@ export default function PasswordReset() {
   }
   const sendVerificationcode = async() => {
    try{
-     const response = await fetch(`${process.env.NEXT_PUBLIC_API_BACKEND_BASE_URL}/resetPassword`, {
+     const response = await fetch(`${process.env.NEXT_PUBLIC_API_BACKEND_BASE_URL}/verifyResetToken`, {
        method: "POST",
        headers: {
          "Content-Type": "application/json",
        },
        body: JSON.stringify({
-         email: formState.verificationCode,
-       }),
+         token: formState.verificationCode.trim(),
+       })
      });
-     if (!response.ok) {
-       setStep(step + 1);
-       setShowError(false);
-       setErrorMessage("");
+     if(response.ok) {
+      const data = await response.json();
+      console.log(data);
+      setStep(step + 1);
+      return;
      }else{
-       setStep(step + 1);
+    setShowError(true);
+     setErrorMessage("Invalid code please try again");
      }
+     
    }catch(error){
      setErrorMessage(`erroc ${error.message}`);
      setShowError(true);
@@ -93,6 +95,48 @@ export default function PasswordReset() {
 
   }
   
+
+  const resetPassword = async() => {
+     if(formState.newPassword === formState.confirmPassword && formState.newPassword.length > 8){
+      try{
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_BACKEND_BASE_URL}/resetPassword`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            token: formState.verificationCode,
+            password: formState.newPassword,
+            confirmation : formState.confirmPassword
+          })
+        });
+        if(response.ok) {
+         const data = await response.json();
+         router.push("/login");
+         setFormState({
+          email: "",
+          verificationCode: "",
+          newPassword: "",
+          confirmPassword: ""
+        });
+         
+         return ;
+        }else{
+          setShowError(true);
+          setErrorMessage("Invalid code please try again");
+        }
+      
+      }catch(error){
+        setErrorMessage(`erroc ${error.message}`);
+        setShowError(true);
+      }
+     }else{
+      setErrorMessage("Passwords do not match or are too short");
+      setShowError(true);
+      return ;
+     }
+   }
+
 const handleSubmit = async (e)=> {
     e.preventDefault();
     if (step === 1) {
@@ -110,7 +154,7 @@ const handleSubmit = async (e)=> {
       await sendVerificationcode();        
     }
     else if(step === 3){
-      console.log("step === 3");
+      resetPassword();
      // await resetPassword();
     }
     

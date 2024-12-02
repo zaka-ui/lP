@@ -42,16 +42,15 @@ export default function Login() {
 
 const logIn = async () => {
   try{
-    const response = await fetch("http://158.220.87.133/api/v1/login", {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_BACKEND_BASE_URL}/login`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         email: formState.email,
-        password: formState.password,
-      }),
-      credentials: "include",
+        password: formState.password
+      })
     })
     if(response.ok){
       const data = await response.json();
@@ -63,16 +62,16 @@ const logIn = async () => {
       setShowError(true);
     }
   }catch(error){
-    console.log(error);
+    setErrorMessage(`erroc ${error.message}`);
+    setShowError(true);
   }
 
 };
 
-  const handleSubmit = (e) => {
+const handleSubmit = (e) => {
     e.preventDefault();
-    // Handle login logic here
-    logIn()
-  };
+    logIn();
+};
 
  if(user?.userData?.email){
    router.push("/project");

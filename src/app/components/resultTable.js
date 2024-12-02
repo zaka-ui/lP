@@ -53,11 +53,11 @@ const ResultsTable = ({ results, totalKeywords, level }) => {
           </tr>
         </thead>
         <tbody>
-          {results.map((result, index) => {
+          {results?.map((result, index) => {
             const keyword = result?.keyword || "Unknown Keyword";
-            const data = result?.result?.[0] || result?.result?.result?.[0];
-            const message = result?.result?.message || result?.message;
-            const suggestions = result?.result?.result || result?.result;
+            const keywordDifficulty = result?.keyword_difficulty;
+            const searchVolume = result?.search_volume;
+            const suggestions = result?.suggestions;
             
             return (
               <tr
@@ -70,25 +70,15 @@ const ResultsTable = ({ results, totalKeywords, level }) => {
                   {keyword}
                 </td>
                 <td className="px-6 py-4 text-center">
-                  {message ? (
-                    <div className="flex items-center justify-end text-amber-400 bg-amber-500/10 
-                                  px-3 py-1 rounded-full">
-                      <AlertCircle className="w-4 h-4 mr-2" />
-                      <span>{message?.split(' ').slice(0,6).join(' ')}</span>
-                    </div>
-                  ) : (
                     <span className="text-gray-300">
-                      {data?.avg_monthly_searches?.toLocaleString() || '-'}
+                      {searchVolume?.toLocaleString() || '-'}
                     </span>
-                  )}
                 </td>
                 <td className="px-6 py-4 text-center">
                   <span className={`px-3 py-1 rounded-full
-                                ${data?.competition_value === 'HIGH' ? 'bg-red-500/20 text-red-400' :
-                                  data?.competition_value === 'MEDIUM' ? 'bg-amber-500/20 text-amber-400' :
-                                  data?.competition_value === 'LOW' ? 'bg-green-500/20 text-green-400' :
-                                  'bg-gray-500/20 text-gray-400'}`}>
-                    {data?.competition_value || message?.split(' ').slice(0,6).join(' ') || '-'}
+                                ${ keywordDifficulty > 50 ? 'bg-red-500/20 text-red-400' :  keywordDifficulty < 50 && keywordDifficulty > 20 ?  'bg-amber-500/20 text-amber-400' : 'bg-green-500/20 text-green-400' }
+                                `}>
+                     {keywordDifficulty > 50 ? 'trés difficile' : keywordDifficulty < 50 && keywordDifficulty > 20 ? 'moyenne' : 'facile' }
                   </span>
                 </td>
                 <td className="px-6 py-4">
