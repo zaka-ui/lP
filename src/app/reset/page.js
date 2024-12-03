@@ -169,7 +169,7 @@ const renderStepContent = () => {
               Reset Password
             </h2>
             <p className="text-gray-400 mb-6">
-              Enter your email address and we'll send you a verification code.
+              Enter your email address and well send you a verification code.
             </p>
             <div className="relative group">
               <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
@@ -190,7 +190,7 @@ const renderStepContent = () => {
               Enter Code
             </h2>
             <p className="text-gray-400 mb-6">
-              We've sent a verification code to {formState.email}
+              We ve sent a verification code to {formState.email}
             </p>
             <div className="relative group">
               <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
