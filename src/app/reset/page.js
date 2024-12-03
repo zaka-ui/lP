@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import { useState, useEffect, useRef } from "react";
 import { Lock, ArrowLeft, Sparkles, Mail, KeyRound, ChevronRight } from "lucide-react";
 import { useRouter } from "next/navigation";
@@ -36,8 +36,8 @@ export default function PasswordReset() {
       }
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
+    window.addEventListener("mousemove", handleMouseMove);
+    return () => window.removeEventListener("mousemove", handleMouseMove);
   }, []);
   const forgotPassword = async () => {
      try {
